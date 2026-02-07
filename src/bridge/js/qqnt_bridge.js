@@ -14,7 +14,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-const { resolveRuntimeConfig, DEFAULT_APPID_BY_VERSION } = require('./node/runtime_config');
+const { resolveRuntimeConfig, resolveAppIdentity } = require('./node/runtime_config');
 const { envFlag, envInt } = require('./node/env_utils');
 const { createLogger } = require('./node/logger');
 const { createBridgeBus } = require('./node/bridge_bus');
@@ -56,17 +56,17 @@ if (exitAfterMs && exitAfterMs > 0) {
 const bootstrap = bootstrapBridgeRuntime({
     fs, path, os, env: process.env, envFlag, log,
     runtime: { QQ_BASE, QQ_VERSION, APP_DIR, WRAPPER_NODE_PATH, SHIM_DIR, QQ_DATA_DIR, GLOBAL_DIR },
-    DEFAULT_APPID_BY_VERSION,
+    resolveAppIdentity,
 });
 
-const { wrapper, guid, appid, getThreadId, mainThreadId } = bootstrap;
+const { wrapper, guid, appid, qua, getThreadId, mainThreadId } = bootstrap;
 
 // ── 会话管理器 ──
 
 const sessionMgr = createSessionManager({
     log, os, fs, path, envFlag, envInt,
     QQ_VERSION, QQ_DATA_DIR, GLOBAL_DIR, TENCENT_FILES_DIR, RUNTIME_ROOT,
-    wrapper, guid, appid, getThreadId,
+    wrapper, guid, appid, qua, getThreadId,
     bridgeBus: null, // 下面赋值
     _startupSession: null, // 下面赋值
 });

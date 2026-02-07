@@ -1,9 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DEFAULT_APPID_BY_VERSION = {
-    '9.9.26-44725': '537337569',
-};
+const APPID_TABLE = require('./appid_table.json');
 
 function pathExists(targetPath) {
     try {
@@ -89,7 +87,60 @@ function resolveRuntimeConfig({ env = process.env, shellDir = __dirname } = {}) 
     };
 }
 
+const PLATFORM_QUA_PREFIX = {
+    windows: 'V1_WIN_NQ_',
+    linux:   'V1_LNX_NQ_',
+    darwin:  'V1_MAC_NQ_',
+};
+
+/**
+ * 检测当前运行平台，返回 appid_table.json 中对应的 key。
+ */
+function detectPlatform() {
+    switch (process.platform) {
+        case 'win32':  return 'windows';
+        case 'linux':  return 'linux';
+        case 'darwin': return 'darwin';
+        default:       return 'windows';
+    }
+}
+
+/**
+ * 根据平台和版本号生成 qua 字符串。
+ */
+function buildQua(platform, version) {
+    const prefix = PLATFORM_QUA_PREFIX[platform] || PLATFORM_QUA_PREFIX.windows;
+    const parts = version.split('-');
+    if (parts.length === 2) {
+        return `${prefix}${parts[0]}_${parts[1]}_GW_B`;
+    }
+    return `${prefix}${version}_GW_B`;
+}
+
+/**
+ * 解析指定 QQ 版本的 appid 和 qua。
+ * appid 按平台从维护表查询；qua 由平台 + 版本号自动推导。
+ * 未收录的版本会给出警告并使用该平台最近已知的 appid。
+ */
+function resolveAppIdentity(version) {
+    const platform = detectPlatform();
+    const qua = buildQua(platform, version);
+    const platformTable = APPID_TABLE[platform] || {};
+    const appid = platformTable[version];
+
+    if (appid !== undefined) {
+        return { appid: String(appid), qua, platform };
+    }
+
+    // 未收录版本：取该平台表中最后一个 appid 作为兜底
+    const keys = Object.keys(platformTable);
+    const fallback = keys.length > 0 ? platformTable[keys[keys.length - 1]] : 537337569;
+    console.warn(`[appid] ${platform}/${version} 未收录，使用兜底 appid=${fallback}，建议更新 appid_table.json`);
+    return { appid: String(fallback), qua, platform };
+}
+
 module.exports = {
-    DEFAULT_APPID_BY_VERSION,
+    APPID_TABLE,
+    resolveAppIdentity,
     resolveRuntimeConfig,
 };

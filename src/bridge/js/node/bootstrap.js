@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-function ensureRuntimeGlobalMeta({ fs, path, GLOBAL_DIR, QQ_VERSION, DEFAULT_APPID_BY_VERSION }) {
+function ensureRuntimeGlobalMeta({ fs, path, GLOBAL_DIR, QQ_VERSION, resolveAppIdentity }) {
     fs.mkdirSync(GLOBAL_DIR, { recursive: true });
 
     const guidPath = path.join(GLOBAL_DIR, 'guid');
@@ -16,24 +16,12 @@ function ensureRuntimeGlobalMeta({ fs, path, GLOBAL_DIR, QQ_VERSION, DEFAULT_APP
         fs.writeFileSync(guidPath, guid + '\n', 'utf8');
     }
 
-    const appidPath = path.join(GLOBAL_DIR, 'appid.json');
-    let appidConfig = {};
-    try {
-        const parsed = JSON.parse(fs.readFileSync(appidPath, 'utf8'));
-        if (parsed && typeof parsed === 'object') {
-            appidConfig = parsed;
-        }
-    } catch {}
-
-    const fallbackAppid = DEFAULT_APPID_BY_VERSION[QQ_VERSION] || '537337569';
-    if (!appidConfig[QQ_VERSION]) {
-        appidConfig[QQ_VERSION] = fallbackAppid;
-        fs.writeFileSync(appidPath, JSON.stringify(appidConfig, null, 2), 'utf8');
-    }
+    const identity = resolveAppIdentity(QQ_VERSION);
 
     return {
         guid,
-        appid: String(appidConfig[QQ_VERSION] || fallbackAppid),
+        appid: identity.appid,
+        qua: identity.qua,
     };
 }
 
@@ -74,7 +62,7 @@ function bootstrapBridgeRuntime(options) {
         env = process.env,
         log,
         runtime,
-        DEFAULT_APPID_BY_VERSION,
+        resolveAppIdentity,
     } = options;
 
     const {
@@ -131,10 +119,11 @@ function bootstrapBridgeRuntime(options) {
     }
 
     fs.mkdirSync(QQ_DATA_DIR, { recursive: true });
-    const runtimeMeta = ensureRuntimeGlobalMeta({ fs, path, GLOBAL_DIR, QQ_VERSION, DEFAULT_APPID_BY_VERSION });
+    const runtimeMeta = ensureRuntimeGlobalMeta({ fs, path, GLOBAL_DIR, QQ_VERSION, resolveAppIdentity });
 
     log('[Bootstrap] QQ_BASE=' + QQ_BASE);
     log('[Bootstrap] QQ_VERSION=' + QQ_VERSION);
+    log('[Bootstrap] appid=' + runtimeMeta.appid + ' qua=' + runtimeMeta.qua);
     log('[Bootstrap] wrapper=' + WRAPPER_NODE_PATH);
     log('[Bootstrap] QQNT source=shim (forced)');
     log('[Bootstrap] QQNT.dll(shim)=' + shimQqntDllPath + ' exists=' + hasShimQqnt);
@@ -148,6 +137,7 @@ function bootstrapBridgeRuntime(options) {
         wrapper,
         guid: runtimeMeta.guid,
         appid: runtimeMeta.appid,
+        qua: runtimeMeta.qua,
         getThreadId,
         mainThreadId,
     };

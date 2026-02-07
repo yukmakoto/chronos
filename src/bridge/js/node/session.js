@@ -53,13 +53,14 @@ class NodeIKernelSessionListener {
  * @param {object} deps.wrapper
  * @param {string} deps.guid
  * @param {string} deps.appid
+ * @param {string} deps.qua
  */
 function createSessionManager(deps) {
     const {
         log, os, fs, path,
         envFlag, envInt,
         QQ_VERSION, QQ_DATA_DIR, GLOBAL_DIR, TENCENT_FILES_DIR, RUNTIME_ROOT,
-        wrapper, guid, appid,
+        wrapper, guid, appid, qua,
     } = deps;
 
     // bridgeBus 和 _startupSession 在构造后由外部赋值
@@ -103,7 +104,7 @@ function createSessionManager(deps) {
             app_version: QQ_VERSION,
             os_version: os.release(),
             use_xlog: false,
-            qua: 'V1_WIN_NQ_' + QQ_VERSION + '_GW_B',
+            qua: qua,
             global_path_config: { desktopGlobalPath: GLOBAL_DIR },
             thumb_config: { maxSide: 324, minSide: 48, longLimit: 6, density: 2 },
         }, globalAdapterRef);
