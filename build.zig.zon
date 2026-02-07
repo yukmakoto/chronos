@@ -1,0 +1,13 @@
+﻿.{
+    .fingerprint = 0x4ae2e10fe39c9fee,
+    .name = .chronos,
+    .version = "0.1.0",
+    .minimum_zig_version = "0.15.0",
+    .dependencies = .{},
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "README.md",
+        "src",
+    },
+}

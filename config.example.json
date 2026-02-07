@@ -1,0 +1,5 @@
+{
+  "listen_port": 6700,
+  "log_level": "info",
+  "runtime_mode": "qqnt"
+}
